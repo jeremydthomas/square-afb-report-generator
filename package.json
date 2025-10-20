@@ -1,0 +1,15 @@
+{
+	"type": "module",
+	"dependencies": {
+		"exceljs": "^4.4.0",
+		"express": "^5.1.0",
+		"flatpickr": "^4.6.13"
+	},
+	"devDependencies": {
+		"prettier": "^3.6.2"
+	},
+	"scripts": {
+		"report": "node run-report.js",
+		"server": "node server.js"
+	}
+}

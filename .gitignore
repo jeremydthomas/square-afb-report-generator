@@ -1,0 +1,19 @@
+# Node & dependencies
+node_modules/
+.env
+.env.*
+
+# Output files
+*.csv
+*.xlsx
+*.log
+
+# Temp / Office / system
+.~lock.*
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp

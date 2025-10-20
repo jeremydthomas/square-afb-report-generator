@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>📅 Square Report Runner</title>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+		/>
+		<style>
+			body {
+				font-family: sans-serif;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				height: 100vh;
+				background: #f5f7fa;
+				padding: 1rem;
+			}
+			h1 {
+				margin-bottom: 1rem;
+			}
+			#calendar {
+				font-size: 1rem;
+				padding: 0.5rem;
+				margin-bottom: 1rem;
+			}
+			button {
+				margin-top: 0.5rem;
+				padding: 0.6rem 1.2rem;
+				font-size: 1rem;
+				cursor: pointer;
+			}
+			.months {
+				display: grid;
+				grid-template-columns: repeat(4, auto);
+				gap: 0.5rem;
+				margin-top: 1rem;
+			}
+			.month-btn {
+				padding: 0.4rem 0.8rem;
+				background: #fff;
+				border: 1px solid #ccc;
+				border-radius: 6px;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.month-btn:hover {
+				background: #e9f0ff;
+			}
+			.month-btn:active {
+				background: #cfe0ff;
+			}
+			.dates {
+				margin-top: 1rem;
+				font-family: monospace;
+				max-width: 600px;
+				text-align: center;
+			}
+			#clearBtn {
+				background: #ffecec;
+				border: 1px solid #ffb3b3;
+				color: #b10000;
+			}
+			#clearBtn:hover {
+				background: #ffdddd;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>📅 Select Dates or Full Months</h1>
+
+		<input id="calendar" placeholder="Click to select specific dates" />
+		<div class="months" id="months"></div>
+
+		<div style="margin-top: 1rem">
+			<button id="runReport">🚀 Run Report</button>
+			<button id="clearBtn">🧹 Clear All</button>
+		</div>
+
+		<div class="dates" id="selected"></div>
+
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+		<script>
+			const selected = document.getElementById("selected");
+			const runBtn = document.getElementById("runReport");
+			const clearBtn = document.getElementById("clearBtn");
+
+			// --- Flatpickr setup ---
+			const picker = flatpickr("#calendar", {
+				mode: "multiple",
+				dateFormat: "Y-m-d",
+				onChange: updateSelected,
+			});
+
+			// --- Month shortcuts ---
+			const monthContainer = document.getElementById("months");
+			const now = new Date();
+			const currentYear = now.getFullYear();
+			const monthNames = [
+				"January",
+				"February",
+				"March",
+				"April",
+				"May",
+				"June",
+				"July",
+				"August",
+				"September",
+				"October",
+				"November",
+				"December",
+			];
+
+			for (let i = 0; i < 12; i++) {
+				const btn = document.createElement("button");
+				btn.textContent = monthNames[i];
+				btn.className = "month-btn";
+				btn.onclick = () => addFullMonth(currentYear, i);
+				monthContainer.appendChild(btn);
+			}
+
+			function addFullMonth(year, monthIndex) {
+				const start = new Date(year, monthIndex, 1);
+				const end = new Date(year, monthIndex + 1, 0); // last day
+				const dates = [];
+				for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+					dates.push(d.toISOString().slice(0, 10));
+				}
+
+				// merge unique
+				const existing = picker.selectedDates.map((d) =>
+					d.toISOString().slice(0, 10)
+				);
+				const all = Array.from(new Set([...existing, ...dates]));
+				picker.setDate(all, true);
+				updateSelected();
+			}
+
+			function updateSelected() {
+				const dates = picker.selectedDates
+					.map((d) => d.toISOString().slice(0, 10))
+					.sort();
+				selected.textContent =
+					dates.length > 0 ? "Selected: " + dates.join(", ") : "(none)";
+			}
+
+			clearBtn.onclick = () => {
+				picker.clear();
+				selected.textContent = "(none)";
+			};
+
+			runBtn.onclick = async () => {
+				const dates = picker.selectedDates
+					.map((d) => d.toISOString().slice(0, 10))
+					.sort();
+
+				if (!dates.length) return alert("Pick at least one date or month!");
+
+				selected.textContent = "Generating report for: " + dates.join(", ");
+
+				const res = await fetch("/run", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ dates }),
+				});
+
+				const json = await res.json().catch(() => ({}));
+				alert(json.ok ? json.msg : "Report started (check backend logs)");
+			};
+		</script>
+	</body>
+</html>
